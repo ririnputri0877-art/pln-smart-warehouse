@@ -1,6 +1,6 @@
 // Cloudinary configuration for PLN Inventory System
-const CLOUD_NAME = 'dr5lqvvhy';
-const UPLOAD_PRESET = 'pln_inventory_upload';
+const CLOUD_NAME = 'dtj51via4';
+const UPLOAD_PRESET = 'pln_ta_gudang';
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
 export interface CloudinaryResponse {

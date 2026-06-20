@@ -8,15 +8,19 @@ import {
 import { getStorage } from "firebase/storage";
 
 // Firebase configuration - PLN Gudang Barang
+// Firebase configuration - PLN Gudang Barang
+// Firebase configuration - PLN Gudang Barang
+// Firebase configuration - PLN Gudang Barang
 export const firebaseConfig = {
-  apiKey: "AIzaSyDC2Y74RUUv42TBf7XwADik2qlzW4OYUxE",
-  authDomain: "gudangbarangya.firebaseapp.com",
-  projectId: "gudangbarangya",
-  storageBucket: "gudangbarangya.firebasestorage.app",
-  messagingSenderId: "876179737101",
-  appId: "1:876179737101:web:bd432ca52a39d4336e2344",
-  measurementId: "G-KTX1C7LBFX",
+  apiKey: "AIzaSyDSfYB0mbTvqJlv6ZZBTkRvKVvXG0THZQI",
+  authDomain: "://firebaseapp.com",
+  projectId: "wms-pln-tabing",
+  storageBucket: "wms-pln-tabing.firebasestorage.app",
+  messagingSenderId: "964629874965",
+  appId: "1:964629874965:web:0a1028701542e89cba411c"
 };
+
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

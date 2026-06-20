@@ -89,11 +89,11 @@ export function ExcelDownloadCard() {
   useEffect(() => {
     // --- LOGIKA DETEKSI ORIGIN UNTUK APK / LOCALHOST ---
     let origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
+// Hapus atau beri komentar agar sistem membaca alamat browser secara jujur dan dinamis
+// if (origin.includes('localhost') || origin.includes('capacitor')) {
+//   origin = 'https://pln-ulp-tabing.vercel.app';
+// }
 
-    if (origin.includes('localhost') || origin.includes('capacitor')) {
-      origin = 'https://pln-ulp-tabing.vercel.app';
-    }
-  
     setDownloadUrl(`${origin}/mobile-download`);
   }, []);
 
