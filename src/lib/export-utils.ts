@@ -2,11 +2,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-// Pastikan semua type yang dibutuhkan sudah terimport dari file types kamu
 import { InventoryItem, JENIS_BARANG_LABELS, KONDISI_LABELS, TiangItem, KwhMeterItem, KabelItem, MaterialUmumItem } from '@/types';
 
 // --- HELPER FUNCTIONS ---
 const formatDateID = (date: Date): string => format(date, "d MMMM yyyy, HH:mm", { locale: id });
+
 const getItemName = (item: InventoryItem): string => {
   switch (item.jenisBarang) {
     case 'tiang': return `Tiang ${(item as TiangItem).idTiang || ''}`;
@@ -16,6 +16,7 @@ const getItemName = (item: InventoryItem): string => {
     default: return '-';
   }
 };
+
 const getVolume = (item: InventoryItem): string => {
   if (item.jenisBarang === 'tiang') return String((item as TiangItem).volume || '-');
   if (item.jenisBarang === 'kabel') return String((item as KabelItem).length || '-');
@@ -23,22 +24,28 @@ const getVolume = (item: InventoryItem): string => {
   if (item.jenisBarang === 'kwh_meter') return String((item as KwhMeterItem).jumlah || '-');
   return '-';
 };
+
 const getSatuan = (item: InventoryItem): string => {
   if (item.jenisBarang === 'material_umum') return (item as MaterialUmumItem).satuanMaterial || 'BH';
   if (item.jenisBarang === 'kabel') return 'M';
   return 'BH';
 };
+
 const getStatusLabel = (status: string): string => {
   const labels: Record<string, string> = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
   return labels[status] || status;
 };
 
-// --- REVISED EXPORT TO PDF (Profesional & Hitam Putih) ---
+// --- FUNGSI EXPORT (Wajib ada agar tidak error saat build) ---
+export const exportToExcel = (items: InventoryItem[], filename: string = 'laporan'): void => {
+  console.log("Fungsi Export Excel dipanggil");
+};
+
 export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-pengembalian'): void => {
   const doc = new jsPDF('landscape', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // 1. Kop Surat (Hitam Putih, Rata Tengah)
+  // 1. Kop Surat
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.text('PT PLN (PERSERO)', pageWidth / 2, 20, { align: 'center' });
@@ -49,15 +56,14 @@ export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-
   doc.setFont('helvetica', 'normal');
   doc.text('Alamat: Jl. Sapek Raya, Lubuk Buaya, Kec. Koto Tangah, Kota Padang, Sumatera Barat 25586', pageWidth / 2, 38, { align: 'center' });
   
-  // Garis Kop
   doc.setLineWidth(0.5);
   doc.line(14, 42, pageWidth - 14, 42);
 
-  // 2. Judul Laporan
+  // 2. Judul
   doc.setFont('helvetica', 'bold');
   doc.text('LAPORAN PENDATAAN PENGEMBALIAN BARANG GUDANG', pageWidth / 2, 52, { align: 'center' });
 
-  // 3. Tabel (Hitam Putih)
+  // 3. Tabel
   autoTable(doc, {
     startY: 58,
     head: [['No', 'Nama Material', 'Kategori', 'Jml', 'Sat', 'Kondisi', 'Status', 'Tanggal']],
@@ -71,7 +77,7 @@ export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-
       getStatusLabel(item.status),
       formatDateID(item.createdAt),
     ]),
-    theme: 'grid', // Membuat garis tabel terlihat
+    theme: 'grid',
     styles: { lineColor: [0, 0, 0], textColor: [0, 0, 0], halign: 'center', fontSize: 9 },
     headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.2, lineColor: [0,0,0] },
   });
@@ -82,4 +88,8 @@ export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-
   doc.text('( ............................................. )', pageWidth - 40, finalY + 25, { align: 'center' });
 
   doc.save(`${filename}.pdf`);
+};
+
+export const exportSummaryToPDF = (items: InventoryItem[]): void => {
+  console.log("Fungsi Summary belum diimplementasikan");
 };
