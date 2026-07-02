@@ -51,7 +51,7 @@ export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-
   
   // 1. Logo (Pastikan file logo-pln.png ada di folder public proyekmu)
   try {
-    doc.addImage("/logo-pln.png", 'PNG', 15, 10, 20, 20);
+   // doc.addImage("/logo-pln.png", 'PNG', 15, 10, 20, 20);
   } catch (e) {
     console.warn("Logo tidak ditemukan, melanjutkan tanpa logo.");
   }
