@@ -1,384 +1,69 @@
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { InventoryItem, JENIS_BARANG_LABELS, KONDISI_LABELS, TiangItem, KwhMeterItem, KabelItem, MaterialUmumItem } from '@/types';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+// 1. Simpan string base64 ini di luar fungsi
+const LOGO_PLN_BASE64 = "data:image/png;base64,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";
 
-// Helper to format date in Indonesian
-const formatDateID = (date: Date): string => {
-  return format(date, "d MMMM yyyy, HH:mm", { locale: id });
-};
-
-// Helper to get item details based on type
-const getItemDetails = (item: InventoryItem): string => {
-  switch (item.jenisBarang) {
-    case 'tiang':
-      const tiangItem = item as TiangItem;
-      return `ID: ${tiangItem.idTiang || '-'}, Tinggi: ${tiangItem.tinggi || '-'}m, Material: ${tiangItem.material || '-'}`;
-    case 'kwh_meter':
-      const meterItem = item as KwhMeterItem;
-      return `ID: ${meterItem.idMeter || '-'}, Merek: ${meterItem.merek || '-'}, Segel: ${meterItem.nomorSegel || '-'}`;
-    case 'kabel':
-      const kabelItem = item as KabelItem;
-      return `${kabelItem.description || '-'}${kabelItem.length ? `, Panjang: ${kabelItem.length}m` : ''}`;
-    case 'material_umum':
-      const matItem = item as MaterialUmumItem;
-      return `${matItem.namaMaterial || '-'}${matItem.serialNumber ? `, SN: ${matItem.serialNumber}` : ''}${matItem.catatan ? `, ${matItem.catatan}` : ''}`;
-    default:
-      return '-';
-  }
-};
-
-// Get item name for display
-const getItemName = (item: InventoryItem): string => {
-  switch (item.jenisBarang) {
-    case 'tiang': return `Tiang ${(item as TiangItem).idTiang || ''}`;
-    case 'kwh_meter': return `KWh Meter ${(item as KwhMeterItem).idMeter || ''}`;
-    case 'kabel': return (item as KabelItem).description || 'Kabel';
-    case 'material_umum': return (item as MaterialUmumItem).namaMaterial || 'Material';
-    default: return '-';
-  }
-};
-
-// Get volume from item if applicable
-const getVolume = (item: InventoryItem): string => {
-  if (item.jenisBarang === 'tiang') return String((item as TiangItem).volume || '-');
-  if (item.jenisBarang === 'kabel') return String((item as KabelItem).length || '-');
-  if (item.jenisBarang === 'material_umum') return String((item as MaterialUmumItem).jumlah || '-');
-  if (item.jenisBarang === 'kwh_meter') return String((item as KwhMeterItem).jumlah || '-');
-  return '-';
-};
-
-// Get unit
-const getSatuan = (item: InventoryItem): string => {
-  if (item.jenisBarang === 'material_umum') return (item as MaterialUmumItem).satuanMaterial || 'BH';
-  if (item.jenisBarang === 'kabel') return 'M';
-  return 'BH';
-};
-
-// Get status label in Indonesian
-const getStatusLabel = (status: string): string => {
-  switch (status) {
-    case 'pending': return 'Menunggu';
-    case 'approved': return 'Disetujui';
-    case 'rejected': return 'Ditolak';
-    default: return status;
-  }
-};
-
-// Export to Excel with professional formatting
-export const exportToExcel = (items: InventoryItem[], filename: string = 'laporan-inventaris'): void => {
-  const headerRows = [
-    ['PT PLN (PERSERO) - UID SUMATERA BARAT'],
-    ['ULP TABING - GUDANG MATERIAL'],
-    ['Laporan Data Inventaris'],
-    [`Dicetak pada: ${formatDateID(new Date())}`],
-    [],
-    ['No', 'Nama Material', 'Kategori', 'Jumlah', 'Satuan', 'Kondisi', 'Status', 'Diinput Oleh', 'Tanggal Input', 'Diverifikasi Oleh', 'Catatan'],
-  ];
-
-  const dataRows = items.map((item, index) => [
-    index + 1,
-    getItemName(item),
-    item.jenisBarang === 'material_umum' ? (item as MaterialUmumItem).kategoriMaterial || '-' : JENIS_BARANG_LABELS[item.jenisBarang],
-    getVolume(item),
-    getSatuan(item),
-    KONDISI_LABELS[item.kondisi] || '-',
-    getStatusLabel(item.status),
-    item.createdByName || '-',
-    formatDateID(item.createdAt),
-    item.verifiedByName || '-',
-    item.rejectionNote || '-',
-  ]);
-
-  const allRows = [...headerRows, ...dataRows];
-  const ws = XLSX.utils.aoa_to_sheet(allRows);
-
-  ws['!cols'] = [
-    { wch: 5 }, { wch: 35 }, { wch: 20 }, { wch: 10 }, { wch: 8 },
-    { wch: 16 }, { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 25 },
-  ];
-
-  ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 10 } },
-    { s: { r: 3, c: 0 }, e: { r: 3, c: 10 } },
-  ];
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Inventaris');
-  const dateStr = format(new Date(), 'yyyy-MM-dd');
-  XLSX.writeFile(wb, `${filename}-${dateStr}.xlsx`);
-};
-
-// ============================================================================
-// PREMIUM PDF EXPORT - PLN Corporate Letterhead
-// ============================================================================
-
-export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-inventaris'): void => {
+// 2. Gunakan di dalam fungsi exportToPDF
+export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-pengembalian'): void => {
   const doc = new jsPDF('landscape', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
 
-  // ---- KOP SURAT / LETTERHEAD ----
-  const drawHeader = () => {
-    // PLN Logo area (yellow box with PLN text)
-    doc.setFillColor(255, 227, 0); // #FFE300
-    doc.roundedRect(14, 8, 28, 28, 2, 2, 'F');
-    doc.setFillColor(22, 60, 147); // #163C93
-    doc.roundedRect(16, 10, 24, 24, 1.5, 1.5, 'F');
-    doc.setFontSize(14);
-    doc.setTextColor(255, 227, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PLN', 28, 24, { align: 'center' });
-    doc.setFontSize(7);
-    doc.text('⚡', 28, 29, { align: 'center' });
+  // A. Tambahkan Logo
+  // Argumen: (base64, format, x, y, width, height)
+  doc.addImage(LOGO_PLN_BASE64, 'PNG', 15, 10, 20, 20);
 
-    // Company Header Text
-    doc.setFontSize(16);
-    doc.setTextColor(22, 60, 147); // PLN Blue
-    doc.setFont('helvetica', 'bold');
-    doc.text('PT PLN (PERSERO)', 48, 16);
-
-    doc.setFontSize(13);
-    doc.text('UNIT INDUK DISTRIBUSI SUMATERA BARAT', 48, 23);
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
-    doc.text('ULP TABING - GUDANG MATERIAL', 48, 29);
-
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Jl. Raya Tabing No. 1, Kel. Bungo Pasang, Kec. Koto Tangah, Kota Padang 25171', 48, 34);
-
-    // Double line separator (thick + thin)
-    doc.setDrawColor(22, 60, 147);
-    doc.setLineWidth(1.2);
-    doc.line(14, 40, pageWidth - 14, 40);
-    doc.setLineWidth(0.3);
-    doc.line(14, 42, pageWidth - 14, 42);
-
-    // Report title
-    doc.setFontSize(12);
-    doc.setTextColor(22, 60, 147);
-    doc.setFont('helvetica', 'bold');
-    doc.text('LAPORAN STOK & MUTASI MATERIAL', pageWidth / 2, 50, { align: 'center' });
-
-    // Report meta
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80, 80, 80);
-    doc.text(`Tanggal Cetak: ${formatDateID(new Date())}`, 14, 56);
-    doc.text(`Total Data: ${items.length} item`, pageWidth - 14, 56, { align: 'right' });
-  };
-
-  // ---- FOOTER WITH SIGNATURE ----
-  const drawFooter = (pageNumber: number, totalPages: number, isLastPage: boolean) => {
-    // Page number
-    doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
-    doc.text(
-      `Halaman ${pageNumber} dari ${totalPages}`,
-      pageWidth / 2,
-      pageHeight - 8,
-      { align: 'center' }
-    );
-
-    // Bottom line
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
-
-    // Left footer text
-    doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
-    doc.text('Dicetak oleh Sistem WMS PLN ULP Tabing', 14, pageHeight - 5);
-
-    // Signature block on last page
-    if (isLastPage) {
-      const sigY = pageHeight - 55;
-      
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.2);
-      doc.line(14, sigY - 5, pageWidth - 14, sigY - 5);
-
-      // Left signature
-      doc.setFontSize(9);
-      doc.setTextColor(60, 60, 60);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Padang, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, 14, sigY + 2);
-
-      doc.text('Dibuat oleh,', 14, sigY + 10);
-      doc.text('Staff Gudang', 14, sigY + 35);
-      doc.setLineWidth(0.3);
-      doc.setDrawColor(100, 100, 100);
-      doc.line(14, sigY + 32, 65, sigY + 32);
-
-      // Right signature
-      doc.text('Mengetahui,', pageWidth - 80, sigY + 10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Supervisor Gudang / Logistik', pageWidth - 80, sigY + 35);
-      doc.setFont('helvetica', 'normal');
-      doc.line(pageWidth - 80, sigY + 32, pageWidth - 14, sigY + 32);
-    }
-  };
-
-  // Draw header on first page
-  drawHeader();
-
-  // Prepare table data
-  const tableData = items.map((item, index) => [
-    index + 1,
-    getItemName(item),
-    item.jenisBarang === 'material_umum' ? (item as MaterialUmumItem).kategoriMaterial || '-' : JENIS_BARANG_LABELS[item.jenisBarang],
-    getVolume(item),
-    getSatuan(item),
-    KONDISI_LABELS[item.kondisi] || '-',
-    getStatusLabel(item.status),
-    item.createdByName || '-',
-    formatDateID(item.createdAt),
-  ]);
-
-  // Generate table with premium styling
-  autoTable(doc, {
-    startY: 60,
-    head: [[
-      'No', 'Nama Material', 'Kategori', 'Jml', 'Sat', 'Kondisi', 'Status', 'Diinput Oleh', 'Tanggal',
-    ]],
-    body: tableData,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [22, 60, 147], // PLN Blue #163C93
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 9,
-      halign: 'center',
-      cellPadding: 3,
-    },
-    bodyStyles: {
-      fontSize: 8,
-      textColor: [40, 40, 40],
-      cellPadding: 2.5,
-    },
-    alternateRowStyles: {
-      fillColor: [243, 244, 246], // #F3F4F6
-    },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 8 },
-      1: { cellWidth: 50 }, // Nama Material - wide
-      2: { cellWidth: 28 },
-      3: { halign: 'center', cellWidth: 10 },
-      4: { halign: 'center', cellWidth: 8 },
-      5: { halign: 'center', cellWidth: 20 },
-      6: { halign: 'center', cellWidth: 16 },
-      7: { cellWidth: 28 },
-      8: { cellWidth: 32 },
-    },
-    margin: { left: 14, right: 14, bottom: 60 },
-    didDrawPage: (data) => {
-      if (data.pageNumber > 1) {
-        // Continuation header
-        doc.setFontSize(10);
-        doc.setTextColor(22, 60, 147);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PT PLN (PERSERO) UID SUMBAR - ULP TABING', 14, 12);
-        doc.text('Laporan Material (lanjutan)', 14, 18);
-        doc.setDrawColor(22, 60, 147);
-        doc.setLineWidth(0.5);
-        doc.line(14, 20, pageWidth - 14, 20);
-      }
-    },
-  });
-
-  // Draw footers on all pages
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    drawFooter(i, totalPages, i === totalPages);
-  }
-
-  const dateStr = format(new Date(), 'yyyy-MM-dd');
-  doc.save(`${filename}-${dateStr}.pdf`);
-};
-
-// Export summary for dashboard
-export const exportSummaryToPDF = (
-  totalItems: number,
-  pendingCount: number,
-  approvedCount: number,
-  rejectedCount: number,
-  filename: string = 'ringkasan-inventaris'
-): void => {
-  const doc = new jsPDF('portrait', 'mm', 'a4');
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  // Header with PLN branding
-  doc.setFillColor(22, 60, 147);
-  doc.roundedRect(18, 12, 22, 22, 1.5, 1.5, 'F');
-  doc.setFontSize(12);
-  doc.setTextColor(255, 227, 0);
-  doc.setFont('helvetica', 'bold');
-  doc.text('PLN', 29, 25, { align: 'center' });
-
+  // B. Kop Surat (Rata Tengah)
+  doc.setFont('times', 'bold');
   doc.setFontSize(16);
-  doc.setTextColor(22, 60, 147);
-  doc.text('PT PLN (PERSERO)', 45, 20);
-  doc.setFontSize(11);
-  doc.text('UID SUMATERA BARAT - ULP TABING', 45, 27);
+  doc.text('PT PLN (PERSERO)', pageWidth / 2, 15, { align: 'center' });
+  doc.setFontSize(14);
+  doc.text('UNIT INDUK DISTRIBUSI SUMATERA BARAT', pageWidth / 2, 21, { align: 'center' });
+  doc.text('ULP TABING', pageWidth / 2, 27, { align: 'center' });
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(80, 80, 80);
-  doc.text('Ringkasan Inventaris Gudang Material', 45, 33);
+  doc.setFont('times', 'normal');
+  doc.text('Alamat: Jl. Sapek Raya, Lubuk Buaya, Kec. Koto Tangah, Kota Padang, Sumatera Barat 25586', pageWidth / 2, 33, { align: 'center' });
+  
+  // Garis Bawah Kop
+  doc.setLineWidth(0.5);
+  doc.line(14, 38, pageWidth - 14, 38);
+  doc.setLineWidth(0.2);
+  doc.line(14, 39, pageWidth - 14, 39);
 
-  // Double line
-  doc.setDrawColor(22, 60, 147);
-  doc.setLineWidth(1.0);
-  doc.line(18, 38, pageWidth - 18, 38);
-  doc.setLineWidth(0.3);
-  doc.line(18, 40, pageWidth - 18, 40);
-
-  // Summary content
-  doc.setFontSize(11);
-  doc.setTextColor(60, 60, 60);
-  doc.text(`Tanggal Laporan: ${formatDateID(new Date())}`, 18, 52);
-
-  // Stats boxes
-  const boxY = 62;
-  const boxWidth = 38;
-  const boxHeight = 35;
-  const gap = 8;
-
-  const stats = [
-    { count: totalItems, label: 'Total Barang', color: [22, 60, 147] as [number, number, number] },
-    { count: pendingCount, label: 'Menunggu', color: [234, 179, 8] as [number, number, number] },
-    { count: approvedCount, label: 'Disetujui', color: [34, 197, 94] as [number, number, number] },
-    { count: rejectedCount, label: 'Ditolak', color: [239, 68, 68] as [number, number, number] },
-  ];
-
-  stats.forEach((stat, idx) => {
-    const x = 18 + (boxWidth + gap) * idx;
-    doc.setFillColor(stat.color[0], stat.color[1], stat.color[2]);
-    doc.roundedRect(x, boxY, boxWidth, boxHeight, 3, 3, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(stat.count), x + boxWidth / 2, boxY + 18, { align: 'center' });
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(stat.label, x + boxWidth / 2, boxY + 28, { align: 'center' });
+  // C. Tabel (Hitam Putih & Rata Tengah)
+  autoTable(doc, {
+    startY: 45,
+    head: [['No', 'Nama Material', 'Kategori', 'Jml', 'Sat', 'Kondisi', 'Status', 'Tanggal']],
+    body: items.map((item, index) => [
+      index + 1,
+      getItemName(item),
+      item.jenisBarang === 'material_umum' ? (item as MaterialUmumItem).kategoriMaterial || '-' : JENIS_BARANG_LABELS[item.jenisBarang],
+      getVolume(item),
+      getSatuan(item),
+      KONDISI_LABELS[item.kondisi] || '-',
+      getStatusLabel(item.status),
+      formatDateID(item.createdAt),
+    ]),
+    theme: 'grid',
+    styles: { 
+        lineColor: [0, 0, 0], 
+        textColor: [0, 0, 0], 
+        halign: 'center', 
+        valign: 'middle',
+        fontSize: 10,
+        font: 'times' 
+    },
+    headStyles: { 
+        fillColor: [255, 255, 255], 
+        textColor: [0, 0, 0], 
+        lineColor: [0, 0, 0],
+        lineWidth: 0.1 
+    }
   });
 
-  // Footer
-  doc.setFontSize(8);
-  doc.setTextColor(128, 128, 128);
-  doc.text(
-    `Dicetak oleh Sistem WMS PLN ULP Tabing pada ${formatDateID(new Date())}`,
-    pageWidth / 2, 280, { align: 'center' }
-  );
+  // D. Kolom Pengesahan (Tanda Tangan)
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  doc.setFont('times', 'normal');
+  doc.text('Padang, ' + format(new Date(), 'd MMMM yyyy', { locale: id }), pageWidth - 40, finalY, { align: 'center' });
+  doc.text('Manager ULP Tabing,', pageWidth - 40, finalY + 7, { align: 'center' });
+  doc.text('( ............................................. )', pageWidth - 40, finalY + 25, { align: 'center' });
 
-  const dateStr = format(new Date(), 'yyyy-MM-dd');
-  doc.save(`${filename}-${dateStr}.pdf`);
+  doc.save(`${filename}.pdf`);
 };
