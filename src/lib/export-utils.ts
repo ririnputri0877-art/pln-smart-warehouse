@@ -1,38 +1,67 @@
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { InventoryItem, JENIS_BARANG_LABELS, KONDISI_LABELS, TiangItem, KwhMeterItem, KabelItem, MaterialUmumItem } from '@/types';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+
+// --- HELPER FUNCTIONS (Wajib ada agar tidak error) ---
+const formatDateID = (date: Date): string => format(date, "d MMMM yyyy, HH:mm", { locale: id });
+
+const getItemName = (item: InventoryItem): string => {
+  switch (item.jenisBarang) {
+    case 'tiang': return `Tiang ${(item as TiangItem).idTiang || ''}`;
+    case 'kwh_meter': return `KWh Meter ${(item as KwhMeterItem).idMeter || ''}`;
+    case 'kabel': return (item as KabelItem).description || 'Kabel';
+    case 'material_umum': return (item as MaterialUmumItem).namaMaterial || 'Material';
+    default: return '-';
+  }
+};
+
+const getVolume = (item: InventoryItem): string => {
+  if (item.jenisBarang === 'tiang') return String((item as TiangItem).volume || '-');
+  if (item.jenisBarang === 'kabel') return String((item as KabelItem).length || '-');
+  if (item.jenisBarang === 'material_umum') return String((item as MaterialUmumItem).jumlah || '-');
+  if (item.jenisBarang === 'kwh_meter') return String((item as KwhMeterItem).jumlah || '-');
+  return '-';
+};
+
+const getSatuan = (item: InventoryItem): string => {
+  if (item.jenisBarang === 'material_umum') return (item as MaterialUmumItem).satuanMaterial || 'BH';
+  if (item.jenisBarang === 'kabel') return 'M';
+  return 'BH';
+};
+
+const getStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = { pending: 'Menunggu', approved: 'Disetujui', rejected: 'Ditolak' };
+  return labels[status] || status;
+};
+
+// --- REVISED EXPORT TO PDF ---
 export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-pengembalian'): void => {
   const doc = new jsPDF('landscape', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  const drawHeader = () => {
-    // 1. Logo (Pastikan file ada di public/logo-pln.png)
-   
+  // Header
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('PT PLN (PERSERO)', pageWidth / 2, 20, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text('UNIT INDUK DISTRIBUSI SUMATERA BARAT', pageWidth / 2, 26, { align: 'center' });
+  doc.text('ULP TABING', pageWidth / 2, 32, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Alamat: Jl. Sapek Raya, Lubuk Buaya, Kec. Koto Tangah, Kota Padang, Sumatera Barat 25586', pageWidth / 2, 38, { align: 'center' });
+  doc.setLineWidth(0.5);
+  doc.line(14, 42, pageWidth - 14, 42);
 
-    // 2. Teks Kop Surat (Rata Tengah)
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    
-    doc.setFontSize(14);
-    doc.text('PT PLN (PERSERO)', pageWidth / 2, 35, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text('UNIT INDUK DISTRIBUSI SUMATERA BARAT', pageWidth / 2, 41, { align: 'center' });
-    doc.text('ULP TABING', pageWidth / 2, 47, { align: 'center' });
-    
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Alamat: Jl. Sapek Raya, Lubuk Buaya, Kec. Koto Tangah, Kota Padang, Sumatera Barat 25586', pageWidth / 2, 53, { align: 'center' });
+  // Judul Laporan
+  doc.setFont('helvetica', 'bold');
+  doc.text('LAPORAN PENDATAAN PENGEMBALIAN BARANG GUDANG', pageWidth / 2, 50, { align: 'center' });
 
-    // Garis Tebal Kop
-    doc.setLineWidth(0.5);
-    doc.line(14, 57, pageWidth - 14, 57);
-    doc.setLineWidth(0.1);
-    doc.line(14, 58, pageWidth - 14, 58);
-  };
-
-  drawHeader();
-
-  // 3. Tabel Hitam Putih & Rata Tengah
+  // Tabel
   autoTable(doc, {
-    startY: 65,
+    startY: 55,
     head: [['No', 'Nama Material', 'Kategori', 'Jml', 'Sat', 'Kondisi', 'Status', 'Tanggal']],
     body: items.map((item, index) => [
       index + 1,
@@ -44,24 +73,9 @@ export const exportToPDF = (items: InventoryItem[], filename: string = 'laporan-
       getStatusLabel(item.status),
       formatDateID(item.createdAt),
     ]),
-    theme: 'plain', // Menghilangkan background warna
-    styles: {
-      lineColor: [0, 0, 0], // Garis hitam
-      lineWidth: 0.1,
-      textColor: [0, 0, 0],
-      halign: 'center', // Semua isi tabel rata tengah
-    },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold',
-      border: 0.1,
-    },
-    columnStyles: {
-      0: { cellWidth: 10 },  // No
-      3: { cellWidth: 15 },  // Jml
-      4: { cellWidth: 15 },  // Sat
-    },
+    theme: 'grid',
+    styles: { lineColor: [0, 0, 0], textColor: [0, 0, 0], halign: 'center', fontSize: 9 },
+    headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
   });
 
   doc.save(`${filename}.pdf`);
